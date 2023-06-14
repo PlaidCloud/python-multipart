@@ -1,27 +1,18 @@
-# -*- coding: utf-8 -*-
-
 import os
 import sys
-import glob
 import yaml
-import base64
 import random
 import tempfile
+import unittest
 from .compat import (
     parametrize,
     parametrize_class,
     slow_test,
-    unittest,
 )
 from io import BytesIO
-from six import binary_type, text_type
+from unittest.mock import Mock
 
-try:
-    from unittest.mock import MagicMock, Mock, patch
-except ImportError:
-    from mock import MagicMock, Mock, patch
-
-from ..multipart import *
+from multipart.multipart import *
 
 
 # Get the current directory for our later test cases.
@@ -29,7 +20,7 @@ curr_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 def force_bytes(val):
-    if isinstance(val, text_type):
+    if isinstance(val, str):
         val = val.encode(sys.getfilesystemencoding())
 
     return val
@@ -398,7 +389,7 @@ class TestQuerystringParser(unittest.TestCase):
             (b'asdf', b'baz')
         )
 
-    def test_semicolon_seperator(self):
+    def test_semicolon_separator(self):
         self.p.write(b'foo=bar;asdf=baz')
 
         self.assert_fields(
@@ -427,7 +418,7 @@ class TestQuerystringParser(unittest.TestCase):
             self.reset()
             self.p.strict_parsing = True
 
-            print("%r / %r" % (first, last))
+            print(f"{first!r} / {last!r}")
 
             self.p.write(first)
             self.p.write(last)
@@ -453,7 +444,7 @@ class TestQuerystringParser(unittest.TestCase):
     def test_double_sep(self):
         data = b'foo=bar&&another=asdf'
         for first, last in split_all(data):
-            print(" %r / %r " % (first, last))
+            print(f" {first!r} / {last!r} ")
             self.reset()
 
             cnt = 0
@@ -699,7 +690,7 @@ class TestQuotedPrintableDecoder(unittest.TestCase):
 http_tests_dir = os.path.join(curr_dir, 'test_data', 'http')
 
 # Read in all test cases and load them.
-NON_PARAMETRIZED_TESTS = set(['single_field_blocks'])
+NON_PARAMETRIZED_TESTS = {'single_field_blocks'}
 http_tests = []
 for f in os.listdir(http_tests_dir):
     # Only load the HTTP test cases.
@@ -716,7 +707,7 @@ for f in os.listdir(http_tests_dir):
             test_data = f.read()
 
         with open(yaml_file, 'rb') as f:
-            yaml_data = yaml.load(f)
+            yaml_data = yaml.safe_load(f)
 
         http_tests.append({
             'name': fname,
@@ -803,7 +794,7 @@ class TestFormParser(unittest.TestCase):
     def test_http(self, param):
         # Firstly, create our parser with the given boundary.
         boundary = param['result']['boundary']
-        if isinstance(boundary, text_type):
+        if isinstance(boundary, str):
             boundary = boundary.encode('latin-1')
         self.make(boundary)
 
@@ -1077,7 +1068,7 @@ class TestFormParser(unittest.TestCase):
         f.write(b'1234')
         f.finalize()
 
-        # Assert that we only recieved a single file, with the right data, and that we're done.
+        # Assert that we only received a single file, with the right data, and that we're done.
         self.assertFalse(on_field.called)
         self.assertEqual(len(files), 1)
         self.assert_file_data(files[0], b'test1234')
@@ -1101,7 +1092,7 @@ class TestFormParser(unittest.TestCase):
             f.write(b'&test=asdf')
             f.finalize()
 
-            # Assert we only recieved 2 fields...
+            # Assert we only received 2 fields...
             self.assertFalse(on_file.called)
             self.assertEqual(len(fields), 2)
 
@@ -1299,15 +1290,14 @@ class TestHelperFunctions(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestFile))
-    suite.addTest(unittest.makeSuite(TestParseOptionsHeader))
-    suite.addTest(unittest.makeSuite(TestBaseParser))
-    suite.addTest(unittest.makeSuite(TestQuerystringParser))
-    suite.addTest(unittest.makeSuite(TestOctetStreamParser))
-    suite.addTest(unittest.makeSuite(TestBase64Decoder))
-    suite.addTest(unittest.makeSuite(TestQuotedPrintableDecoder))
-    suite.addTest(unittest.makeSuite(TestFormParser))
-    suite.addTest(unittest.makeSuite(TestHelperFunctions))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFile))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestParseOptionsHeader))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestBaseParser))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestQuerystringParser))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestOctetStreamParser))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestBase64Decoder))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestQuotedPrintableDecoder))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFormParser))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestHelperFunctions))
 
     return suite
-

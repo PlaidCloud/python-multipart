@@ -5,8 +5,7 @@
 branch = False
 # branch = True
 omit =
-    *six.py
-    multipart/tests/*
+    tests/*
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -32,7 +31,4 @@ exclude_lines =
 
     # Ignore import exceptions
     except ImportError:
-
-    # Ignore python compatibility.
-    if PY3
 
